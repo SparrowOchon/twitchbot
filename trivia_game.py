@@ -8,12 +8,14 @@ from twitchbot import twitchchat
 
 class TriviaQuestion:
     def __init__(self):
-        self.question = ''
+        self.question = ""
         self.question_list = []
         self.trivia_total_time = 0
         self.trivia_time_start = 0
         self.trivia_time_end = 0
-        self.answered = False  # switch to determine if we need to get a new question or not
+        self.answered = (
+            False
+        )  # switch to determine if we need to get a new question or not
         self.was_question_asked = False
 
         self.trivia_bool = False
@@ -27,9 +29,9 @@ class TriviaQuestion:
 
 def question_list_generator(ourtrivia):
     file_list = ourtrivia.question_list
-    trivia_file = r'MyFiles\trivia.txt'
+    trivia_file = r"MyFiles\trivia.txt"
     if len(file_list) == 0:
-        with open(trivia_file, 'r') as f:
+        with open(trivia_file, "r") as f:
             for i in f:
                 file_list.append(i)
     return file_list
@@ -47,7 +49,7 @@ def trivia_qa(ourtrivia):
 
 
 def trivia_question(s, message, ourtrivia, starting_val):
-    if message.startswith(starting_val + 'trivia'):
+    if message.startswith(starting_val + "trivia"):
         if ourtrivia.was_question_asked is False:
             if ourtrivia.answered is True:
                 ourtrivia.trivia_total_time = 0
@@ -66,7 +68,14 @@ def trivia_chat_answer(s, username, message, ourtrivia, general):
     answer = str(ourtrivia.question[1])
 
     if fuzz.ratio(answer.lower(), message.lower()) >= 87:
-        twitchchat.chat(s, 'Nice guess ' + username + '! The answer was ' + answer + '! You got 3 points!')
+        twitchchat.chat(
+            s,
+            "Nice guess "
+            + username
+            + "! The answer was "
+            + answer
+            + "! You got 3 points!",
+        )
         general.viewer_objects[username].trivia_answers += 1
         general.viewer_objects[username].points += 3
         ourtrivia.trivia_time_start = time.time()
@@ -78,19 +87,19 @@ def trivia_chat_answer(s, username, message, ourtrivia, general):
 def trivia_time_answer(s, ourtrivia, trivia_total_time):
     answer = str(ourtrivia.question[1])
 
-    #print(81)
+    # print(81)
     if ourtrivia.answered is True:
-        #print(82)
+        # print(82)
         pass
 
     elif trivia_total_time > 30:
         if ourtrivia.trivia_bool is True:
-            twitchchat.chat(s, 'No one guessed it right! The answer was: ' + answer)
+            twitchchat.chat(s, "No one guessed it right! The answer was: " + answer)
             ourtrivia.trivia_time_start = time.time()
             ourtrivia.trivia_total_time = 0
             ourtrivia.answered = True
             ourtrivia.was_question_asked = False
-            #print(91)
+            # print(91)
         else:
             ourtrivia.trivia_total_time = 0
-            #print(94)
+            # print(94)

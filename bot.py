@@ -16,6 +16,7 @@ import sqlite3
 import io
 from requests.adapters import HTTPAdapter
 from urllib3 import Retry
+
 # from queue import Queue  # we will need this later I think when there
 # are a lot of messages
 
@@ -30,7 +31,8 @@ from twitchbot import (
     viewerclass,
     get_commands,
     merge_databases,
-    send_email,)
+    send_email,
+)
 
 
 class General:
@@ -47,8 +49,8 @@ class General:
 
         self.get_viewers_func = False
         self.todaydate = str(datetime.datetime.today().date().strftime("%Y-%m-%d"))
-        self.game_name = ''
-        self.oursocket = ''
+        self.game_name = ""
+        self.oursocket = ""
 
         self.viewer_objects = {}
 
@@ -67,13 +69,32 @@ class General:
         self.honor_bool = True
         self.email_bool = True
 
-        self.starting_val = '-'
+        self.starting_val = "-"
 
-        self.user_levels = {'Larvae': 120, 'Drone': 240, 'Zergling': 480, 'Baneling': 960, 'Overlord': 1920,
-                            'Roach': 3840, 'Ravager': 7680, 'Overseer': 11520, 'Mutalisk': 14400,
-                            'Corrupter': 18000, 'Hydralisk': 22500, 'Swarm Host': 28125, 'Locust': 35156,
-                            'Infestor': 43945, 'Lurker': 50537, 'Viper': 58117, 'Ultralisk': 66835, 'Broodlord': 75523,
-                            'Dark Archon': 123139, 'Cerebrate': 200000, 'The Overmind': 500000, 'Kerrigan': 700000}
+        self.user_levels = {
+            "Larvae": 120,
+            "Drone": 240,
+            "Zergling": 480,
+            "Baneling": 960,
+            "Overlord": 1920,
+            "Roach": 3840,
+            "Ravager": 7680,
+            "Overseer": 11520,
+            "Mutalisk": 14400,
+            "Corrupter": 18000,
+            "Hydralisk": 22500,
+            "Swarm Host": 28125,
+            "Locust": 35156,
+            "Infestor": 43945,
+            "Lurker": 50537,
+            "Viper": 58117,
+            "Ultralisk": 66835,
+            "Broodlord": 75523,
+            "Dark Archon": 123139,
+            "Cerebrate": 200000,
+            "The Overmind": 500000,
+            "Kerrigan": 700000,
+        }
         self.errors = []
         self.sent_errors = []
         self.connected = False
@@ -90,14 +111,13 @@ general = General()
 
 def sql_file():
     return pathlib.Path(
-        r'MyFiles\ViewerData2_' +
-        encryption_key.decrypted_chan +
-        '.sqlite')
+        r"MyFiles\ViewerData2_" + encryption_key.decrypted_chan + ".sqlite"
+    )
 
 
 def printable_logger(e):
     # Create the logger
-    logger = logging.getLogger('basic_logger')
+    logger = logging.getLogger("basic_logger")
     logger.setLevel(logging.DEBUG)
 
     # Setup the console handler with a StringIO object
@@ -131,16 +151,18 @@ def printable_logger(e):
 
 
 def error_log():
-    error_file = pathlib.Path('MyFiles/error_log.log')
-    logging.basicConfig(filename=error_file, filemode='a', level=logging.INFO)
+    error_file = pathlib.Path("MyFiles/error_log.log")
+    logging.basicConfig(filename=error_file, filemode="a", level=logging.INFO)
     curr_time = str(datetime.datetime.today())
     logging.debug(curr_time)
-    sys.stderr = open(error_file, 'a')
+    sys.stderr = open(error_file, "a")
 
 
 def logging_line(e):
     printable_logger(e)
-    logging.info(general.todaydate + " " + formatted_time() + "\n" + str(e) + "\nEND OF ERROR")
+    logging.info(
+        general.todaydate + " " + formatted_time() + "\n" + str(e) + "\nEND OF ERROR"
+    )
 
 
 def handle_files():
@@ -157,17 +179,17 @@ def connect_socket():
         s = socket.socket()
         s.connect((encryption_key.cfg_host, int(encryption_key.cfg_port)))
         s.send(
-            f'CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands\r\n'.encode('utf-8'))
+            f"CAP REQ :twitch.tv/membership twitch.tv/tags twitch.tv/commands\r\n".encode(
+                "utf-8"
+            )
+        )
+        s.send("PASS {}\r\n".format(encryption_key.decrypted_pass).encode("utf-8"))
         s.send(
-            "PASS {}\r\n".format(
-                encryption_key.decrypted_pass).encode("utf-8"))
+            "NICK {}\r\n".format(encryption_key.decrypted_nick).encode("utf-8")
+        )  # bot name
         s.send(
-            "NICK {}\r\n".format(
-                encryption_key.decrypted_nick).encode("utf-8"))  # bot name
-        s.send(
-            "JOIN {}\r\n".format(
-                '#' +
-                encryption_key.decrypted_chan).encode("utf-8"))  # channel name
+            "JOIN {}\r\n".format("#" + encryption_key.decrypted_chan).encode("utf-8")
+        )  # channel name
         general.connected = True
         general.ping_timer = time.time()
         return s
@@ -180,25 +202,30 @@ def get_viewers():
     session = requests.Session()
     retry = Retry(connect=500, backoff_factor=0.5)
     adapter = HTTPAdapter(max_retries=retry)
-    session.mount('http://', adapter)
-    session.mount('https://', adapter)
+    session.mount("http://", adapter)
+    session.mount("https://", adapter)
     try:
-        channel_json = session.get(url='https://tmi.twitch.tv/group/user/' + encryption_key.decrypted_chan
-                                       + '/chatters').json()
+        channel_json = session.get(
+            url="https://tmi.twitch.tv/group/user/"
+            + encryption_key.decrypted_chan
+            + "/chatters"
+        ).json()
 
-        broadcaster = (channel_json['chatters']['broadcaster'])
-        viewers = (channel_json['chatters']['viewers'])
-        moderators = (channel_json['chatters']['moderators'])
-        staff = (channel_json['chatters']['staff'])
-        vips = (channel_json['chatters']['vips'])
-        global_mods = (channel_json['chatters']['global_mods'])
-        admins = (channel_json['chatters']['admins'])
+        broadcaster = channel_json["chatters"]["broadcaster"]
+        viewers = channel_json["chatters"]["viewers"]
+        moderators = channel_json["chatters"]["moderators"]
+        staff = channel_json["chatters"]["staff"]
+        vips = channel_json["chatters"]["vips"]
+        global_mods = channel_json["chatters"]["global_mods"]
+        admins = channel_json["chatters"]["admins"]
         viewers_list = viewers + staff + vips + global_mods + admins
         viewers_and_mods = [viewers_list, moderators + broadcaster]
         return viewers_and_mods
     except TypeError as e:
         logging_line(e)
-        return general.get_viewers_func  # shitty workaround, dont know if this will cause it to get stuck
+        return (
+            general.get_viewers_func
+        )  # shitty workaround, dont know if this will cause it to get stuck
 
 
 # need to ensure this thread is inactive before trying to run again
@@ -234,8 +261,9 @@ def saveviewertime():
         general.hourstime_end = time.time()
         general.hourstime_difference = general.hourstime_end - general.hourstime_start
 
-        general.total_hourstime = general.total_hourstime + \
-            (general.hourstime_end - general.prev_iter_time)
+        general.total_hourstime = general.total_hourstime + (
+            general.hourstime_end - general.prev_iter_time
+        )
         general.prev_iter_time = time.time()
 
         if general.get_viewers_func is not None:
@@ -245,10 +273,12 @@ def saveviewertime():
                     game_name = general.game_name
 
                     viewerclass.save_seconds_for_sql(
-                        getviewers=general.get_viewers_func[0] + general.get_viewers_func[1],
+                        getviewers=general.get_viewers_func[0]
+                        + general.get_viewers_func[1],
                         game=game_name,
                         seconds=general.hourstime_difference,
-                        general=general)
+                        general=general,
+                    )
 
                     general.hourstime_start = general.hourstime_end
         time.sleep(1)  # sleep to reduce cpu load
@@ -260,14 +290,13 @@ def timefunctions():  # make a counter here so not multiple saves occur
         general.get_viewers_func = get_viewers()
 
     while True:
-        #print(275)
+        # print(275)
         if int(general.total_hourstime) % 10 == 0:
 
             general.get_viewers_func = get_viewers()
             sql_commands.check_if_user_exists(
-                get_viewers=(
-                        general.get_viewers_func[0] +
-                        general.get_viewers_func[1]))
+                get_viewers=(general.get_viewers_func[0] + general.get_viewers_func[1])
+            )
 
             for viewer in general.viewer_objects:
                 if general.viewer_objects[viewer].join_message_check is False:
@@ -277,27 +306,35 @@ def timefunctions():  # make a counter here so not multiple saves occur
                     sql_commands.welcome_viewers(
                         s=s,
                         general=general,
-                        getviewers=general.get_viewers_func[0] + general.get_viewers_func[1],
-                        currtime=int(time.time()))
+                        getviewers=general.get_viewers_func[0]
+                        + general.get_viewers_func[1],
+                        currtime=int(time.time()),
+                    )
 
             if len(general.get_viewers_func[0] + general.get_viewers_func[1]) < 100:
                 timer = 300
-            elif general.game_name == 'Offline':
-                timer = 300*6
+            elif general.game_name == "Offline":
+                timer = 300 * 6
             else:
-                timer = len(general.get_viewers_func[0] + general.get_viewers_func[1]) * 2
+                timer = (
+                    len(general.get_viewers_func[0] + general.get_viewers_func[1]) * 2
+                )
             if general.total_hourstime > timer:
                 general.game_name = current_game.game_name()
                 viewerclass.create_all_viewerobjects(
-                    general.get_viewers_func[0] + general.get_viewers_func[1], general)
+                    general.get_viewers_func[0] + general.get_viewers_func[1], general
+                )
 
-                sql_commands.update_all_users_seconds(general=general, todaydate=general.todaydate)
+                sql_commands.update_all_users_seconds(
+                    general=general, todaydate=general.todaydate
+                )
                 sql_commands.update_user_points(general=general)
                 sql_commands.update_user_chat_lines(
-                    date=general.todaydate, general=general)
+                    date=general.todaydate, general=general
+                )
                 sql_commands.check_users_joindate(
-                    general.get_viewers_func[0] +
-                    general.get_viewers_func[1])
+                    general.get_viewers_func[0] + general.get_viewers_func[1]
+                )
                 sql_commands.check_mods(general)  # this was before just mods
                 sql_commands.update_bots()
                 sql_commands.save_chat(general=general)
@@ -318,19 +355,19 @@ def timefunctions():  # make a counter here so not multiple saves occur
                 general.total_hourstime = 0
                 # should be on a separate thread
         else:
-            time.sleep(.1)  # sleeping to reduce load on cpu
+            time.sleep(0.1)  # sleeping to reduce load on cpu
 
 
 def saveviewerchat():
     s = general.oursocket
     try:
-        full_regex = re.compile(
-            r":([\w|?_]+)!\w+@\w+.tmi.twitch.tv PRIVMSG #\w+ :(.+)")
-        #twitchchat.chat(s, 'LET ME LIVE')
+        full_regex = re.compile(r":([\w|?_]+)!\w+@\w+.tmi.twitch.tv PRIVMSG #\w+ :(.+)")
+        # twitchchat.chat(s, 'LET ME LIVE')
         while True:
-            response = s.recv(1024).decode("utf-8", 'ignore')
+            response = s.recv(1024).decode("utf-8", "ignore")
             user_and_message = handle_response(
-                s=s, response=response, full_regex=full_regex)
+                s=s, response=response, full_regex=full_regex
+            )
 
             game_name = general.game_name
 
@@ -339,38 +376,51 @@ def saveviewerchat():
 
                 # need to check in save_chat_for_sql if the UID exists, and if not
                 # THEN call check_if_user_exists
-                viewerclass.chat_honor_movement(user_and_message[0], user_and_message[1], general)
+                viewerclass.chat_honor_movement(
+                    user_and_message[0], user_and_message[1], general
+                )
                 viewerclass.save_chat_for_sql(
-                    date=str(
-                        general.todaydate),
+                    date=str(general.todaydate),
                     formatted_time=formatted_time(),
                     game=game_name,
                     username=user_and_message[0],
                     message=user_and_message[1],
-                    general=general)
+                    general=general,
+                )
 
                 viewerclass.add_one_viewerobject(general, user_and_message[0])
                 if user_and_message[0] not in general.viewer_objects:
                     viewerclass.add_one_viewerobject(general, user_and_message[0])
                 else:
-                    general.viewer_objects[user_and_message[0]].points += .2
-                    if game_name not in general.viewer_objects[user_and_message[0]].chat_line_dict:
-                        general.viewer_objects[user_and_message[0]].chat_line_dict[game_name] = 1
+                    general.viewer_objects[user_and_message[0]].points += 0.2
+                    if (
+                        game_name
+                        not in general.viewer_objects[
+                            user_and_message[0]
+                        ].chat_line_dict
+                    ):
+                        general.viewer_objects[user_and_message[0]].chat_line_dict[
+                            game_name
+                        ] = 1
                     else:
-                        general.viewer_objects[user_and_message[0]].chat_line_dict[game_name] += 1
+                        general.viewer_objects[user_and_message[0]].chat_line_dict[
+                            game_name
+                        ] += 1
 
                 botcommands.handle_commands(
                     s,
                     username=user_and_message[0],
                     message=user_and_message[1],
-                    general=general)
-    
+                    general=general,
+                )
+
                 if general.trivia_bool is True:
                     gamefunctions(
                         message=user_and_message[1],
                         s=s,
                         username=user_and_message[0],
-                        ourtrivia=general.trivia_object)
+                        ourtrivia=general.trivia_object,
+                    )
 
     except UnicodeDecodeError as e:
         logging_line(e)
@@ -382,94 +432,108 @@ def gamefunctions(message, s, username, ourtrivia):
 
     if len(ourtrivia.question_list) == 0:
         ourtrivia.get_question_list(ourtrivia)
-    if ourtrivia.question == '':
+    if ourtrivia.question == "":
         ourtrivia.get_question(ourtrivia=ourtrivia)
-    trivia_game.trivia_question(message=message, s=s, ourtrivia=ourtrivia, starting_val=general.starting_val)
+    trivia_game.trivia_question(
+        message=message, s=s, ourtrivia=ourtrivia, starting_val=general.starting_val
+    )
 
     # - Answer will now be printed out in chat if not answered after 30 seconds regardless of chat
     # (used to be chat based)
     if ourtrivia.was_question_asked is True:
         ourtrivia.trivia_bool = True
-        #general.trivia_object.trivia_time_end = time.time()
+        # general.trivia_object.trivia_time_end = time.time()
         trivia_game.trivia_chat_answer(
             message=message,
             s=s,
             ourtrivia=ourtrivia,
             username=username,
-            general=general)
+            general=general,
+        )
 
         general.trivia_object.trivia_time_end = time.time()
-        general.trivia_object.trivia_total_time = general.trivia_object.trivia_time_end - \
-                                                  general.trivia_object.trivia_time_start
+        general.trivia_object.trivia_total_time = (
+            general.trivia_object.trivia_time_end
+            - general.trivia_object.trivia_time_start
+        )
         trivia_game.trivia_time_answer(
             s=s,
             ourtrivia=general.trivia_object,
-            trivia_total_time=general.trivia_object.trivia_total_time)
+            trivia_total_time=general.trivia_object.trivia_total_time,
+        )
         # tried moving this from where it was so it could be time based instead of chat based, uncommenting this
         # function causes the rest of the parent function to not run
 
 
 def streamer_prefs():
     # add no points for trivia option
-    streamer_pref_file = 'MyFiles/streamer_prefs.txt'
-    with open(streamer_pref_file, 'r') as f:
+    streamer_pref_file = "MyFiles/streamer_prefs.txt"
+    with open(streamer_pref_file, "r") as f:
         all_lines = f.readlines()
     email_bool = False
     for line in all_lines:
         line = line.split()
-        #print(line)
+        # print(line)
         if "Trivia" in line:
-            if "off" in line or "Off" in line:  # be careful with this we also have a ourtrivia.trivia_bool
+            if (
+                "off" in line or "Off" in line
+            ):  # be careful with this we also have a ourtrivia.trivia_bool
                 general.trivia_bool = False
-                print('Trivia is off')
+                print("Trivia is off")
             else:
-                print('Trivia is on')
+                print("Trivia is on")
         if "Points" in line:
             if "off" in line or "Off" in line:
                 general.points_bool = False
-                print('Points is off')
+                print("Points is off")
             else:
-                print('Points is on')
+                print("Points is on")
         if "Guessnumber" in line:
             if "off" in line or "Off" in line:
                 general.gn_bool = False
-                print('Guessnumber is off')
+                print("Guessnumber is off")
             else:
-                print('Guessnumber is on')
+                print("Guessnumber is on")
         if "Honor" in line:
             if "off" in line or "Off" in line:
                 general.honor_bool = False
-                print('Honor is off')
+                print("Honor is off")
             else:
-                print('Honor is on')
+                print("Honor is on")
         if "Email" in line:
             email_bool = True
             if "off" in line or "Off" in line:
                 general.email_bool = False
-                print('Email error logging is off, if there are errors ZERG3RR will not be able to fix them')
+                print(
+                    "Email error logging is off, if there are errors ZERG3RR will not be able to fix them"
+                )
             else:
                 print("Email error logging is on")
     if email_bool is False:
-        with open(streamer_pref_file, 'a') as f:
+        with open(streamer_pref_file, "a") as f:
             f.write("\nEmail - On\n")
 
 
 def check_files():
-    if not os.path.isfile('MyFiles/streamer_prefs.txt'):
-        with open('MyFiles/streamer_prefs.txt', 'w') as f:
-            f.write("Trivia - On\n"
-                    "Points - On\n"
-                    "Guessnumber Game - On\n"
-                    "Honor level/Honor/Dishonor - On\n"
-                    "Email - On\n")
+    if not os.path.isfile("MyFiles/streamer_prefs.txt"):
+        with open("MyFiles/streamer_prefs.txt", "w") as f:
+            f.write(
+                "Trivia - On\n"
+                "Points - On\n"
+                "Guessnumber Game - On\n"
+                "Honor level/Honor/Dishonor - On\n"
+                "Email - On\n"
+            )
 
-    if not os.path.isfile('MyFiles/bot_commands.txt'):
-        with open('MyFiles/bot_commands.txt', 'w') as f:
-            f.write("-hello [hello username]\n-eightball [No; Yes; Leave me alone; I think we already know the "
-                    "answer to THAT; I'm not sure; My sources point to yes; Could be yes, could be no, nobody knows!; "
-                    "Maybe; Are you kidding me?; You may rely on it; Outlook not so good; Don't count on it; "
-                    "Most likely; Without a doubt; As I see it; yes]\n"
-                    "-help [https://giphertius.wordpress.com/2018/02/20/giphertius-python-commands/]")
+    if not os.path.isfile("MyFiles/bot_commands.txt"):
+        with open("MyFiles/bot_commands.txt", "w") as f:
+            f.write(
+                "-hello [hello username]\n-eightball [No; Yes; Leave me alone; I think we already know the "
+                "answer to THAT; I'm not sure; My sources point to yes; Could be yes, could be no, nobody knows!; "
+                "Maybe; Are you kidding me?; You may rely on it; Outlook not so good; Don't count on it; "
+                "Most likely; Without a doubt; As I see it; yes]\n"
+                "-help [https://giphertius.wordpress.com/2018/02/20/giphertius-python-commands/]"
+            )
 
 
 def first_time():
@@ -481,19 +545,19 @@ def first_time():
         print(directory_path)
         encryption_key.GetUserInput()"""
 
-    if not os.path.isfile('MyFiles/trivia.txt'):
+    if not os.path.isfile("MyFiles/trivia.txt"):
         send_email.new_user_email(general, logging_line)
-        with open('MyFiles/trivia.txt', 'w') as f:
+        with open("MyFiles/trivia.txt", "w") as f:
             f.write(
                 "{Question}[League of Legends] What is Aatrox's Passive ability called?{Answer}Blood Well\n"
-            
-                "{Question}[League of Legends] What is Ahri's Passive ability called?{Answer}Essence Theft\n")
-        print('Creating trivia file...')
+                "{Question}[League of Legends] What is Ahri's Passive ability called?{Answer}Essence Theft\n"
+            )
+        print("Creating trivia file...")
         time.sleep(1)
 
-        print('Creating database and setting up...')
+        print("Creating database and setting up...")
         time.sleep(2)
-        print('Verifying streamer...')
+        print("Verifying streamer...")
 
     verified = verify_streamer.decrypt_streamerbot()
     if verified is None:
@@ -502,18 +566,25 @@ def first_time():
 
 
 def db_merge():
-    directory = r'MyFiles/'
+    directory = r"MyFiles/"
     try:
         if os.path.isfile(merge_databases.sql_file()):
-            print('MERGING DATABASE 1 PLEASE DO NOT CLOSE THE APPLICATION')
+            print("MERGING DATABASE 1 PLEASE DO NOT CLOSE THE APPLICATION")
             merge_databases.copy_viewerdata()
-            os.rename(directory + 'ViewerData_' + encryption_key.decrypted_chan + '.sqlite',
-                      directory + 'old_ViewerData_' + encryption_key.decrypted_chan + '.sqlite')
+            os.rename(
+                directory + "ViewerData_" + encryption_key.decrypted_chan + ".sqlite",
+                directory
+                + "old_ViewerData_"
+                + encryption_key.decrypted_chan
+                + ".sqlite",
+            )
         if os.path.isfile(merge_databases.hours_file()):
-            print('MERGING DATABASE 2 PLEASE DO NOT CLOSE THE APPLICATION')
+            print("MERGING DATABASE 2 PLEASE DO NOT CLOSE THE APPLICATION")
             merge_databases.copy_hoursdata()
-            os.rename(directory + 'hours_' + encryption_key.decrypted_chan + '.sqlite',
-                      directory + 'old_hours_' + encryption_key.decrypted_chan + '.sqlite')
+            os.rename(
+                directory + "hours_" + encryption_key.decrypted_chan + ".sqlite",
+                directory + "old_hours_" + encryption_key.decrypted_chan + ".sqlite",
+            )
     except sqlite3.OperationalError as e:
         logging_line(e)
 
@@ -528,7 +599,11 @@ def startup():
     if rule_check == "":
         check_runtime_info.check_admin(logging_line)"""
     if len(sql_commands.error_log_reading()) != 0:
-        send_email.send_email(msg=send_email.get_error(general), general=general, logging_line=logging_line)
+        send_email.send_email(
+            msg=send_email.get_error(general),
+            general=general,
+            logging_line=logging_line,
+        )
 
 
 def connection_check_handle():
@@ -544,7 +619,9 @@ def connection_check_handle():
 def handle_response(s, response, full_regex):
     try:
         if general.print_chat_count < 1:
-            print('Connecting to twitch channel %s...' % (encryption_key.decrypted_chan,))
+            print(
+                "Connecting to twitch channel %s..." % (encryption_key.decrypted_chan,)
+            )
             general.print_chat_count += 1
 
         # tests connection/reconnects if disconnect occurs
@@ -561,11 +638,17 @@ def handle_response(s, response, full_regex):
 
         elif ".tmi.twitch.tv WHISPER" in response:
             remove_whisper = re.search(r"(?<=WHISPER )(.*)", response).group(0)
-            whisper_message = re.search(
-                r"(?<= :)(.*)", remove_whisper).group(0)
+            whisper_message = re.search(r"(?<= :)(.*)", remove_whisper).group(0)
             username = re.search(r"(?<=!)(.*)(?=@)", response).group(0)
-            print("WHISPER - " + '(' + formatted_time() + ')' +
-                  username + ": " + str(whisper_message))
+            print(
+                "WHISPER - "
+                + "("
+                + formatted_time()
+                + ")"
+                + username
+                + ": "
+                + str(whisper_message)
+            )
             return [username, whisper_message]
 
         elif ".tmi.twitch.tv PART" in response or ".tmi.twitch.tv JOIN" in response:
@@ -573,8 +656,7 @@ def handle_response(s, response, full_regex):
             if username is not None:
                 username = username.group(0)
             if "JOIN" in response:
-                viewerclass.add_one_viewerobject(
-                    general=general, viewer=username)
+                viewerclass.add_one_viewerobject(general=general, viewer=username)
             if username in general.viewer_objects:
                 general.viewer_objects[username].last_seen_date = general.todaydate
             return None
@@ -595,7 +677,7 @@ def main():  # printing @badges line once, and sometimes skipping messages is a 
         general.game_name = current_game.game_name()
         general.todaydate = str(datetime.datetime.today().date())
         printable_logger(e="Startup of bot")
-        if not os.path.exists('MyFiles/cfg.txt'):
+        if not os.path.exists("MyFiles/cfg.txt"):
             encryption_key.GetUserInput()
             first_time()
             send_email.new_user_email(general, logging_line=logging_line)

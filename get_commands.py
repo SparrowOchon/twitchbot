@@ -1,6 +1,6 @@
 import re
 
-print('Importing commands')
+print("Importing commands")
 
 
 def get_commands(general):
@@ -16,9 +16,9 @@ def get_commands(general):
             command = command_and_random[0]
 
             command_output = re.search("(?<=\[)(.*)(?=\])", line)
-            if len(command_output.group(0).split(';')) > 1:
+            if len(command_output.group(0).split(";")) > 1:
                 general.list_command_dict[command] = []
-                for i in command_output.group(0).split(';'):
+                for i in command_output.group(0).split(";"):
                     general.list_command_dict[command].append(i)
             else:
                 general.str_command_dict[command] = command_output.group(0)

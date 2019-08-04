@@ -25,11 +25,11 @@ def game_name():
         game = str(gameregex2.group(0))
         game = game.replace(": '", "")
         game = game.replace("'", "")
-        game = game.replace(' ', '')
+        game = game.replace(" ", "")
         Game.oldgamename = game
         if game != "GameNotFound":
             return game
     except AttributeError:
-        return 'Offline'
+        return "Offline"
     except ValueError:
         return Game
