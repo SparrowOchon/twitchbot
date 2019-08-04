@@ -59,4 +59,4 @@ Install all requirements: `pip3 install -r requirements.txt`
 - Merge changelogs directly with git releases and tags.
 
 ## Special Thanks:
-To [Thukor](https://github.com/Thukor), and GreenMachine! for their contribution to this bot.
+To [Thukor](https://github.com/Thukor), and [GreenMachine](https://github.com/pelletier2017)! for their contribution to this bot.
