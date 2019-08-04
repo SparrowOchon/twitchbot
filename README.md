@@ -53,10 +53,10 @@ Install all requirements: `pip3 install -r requirements.txt`
     - sql_commands.py
     - check_users_joindate
     - check_mods
-    - merge_databases.py
+  - merge_databases.py
     - copy_viewerdata
 - Update readme with install and usage instructions.
 - Merge changelogs directly with git releases and tags.
 
 ## Special Thanks:
-To Thukor, and GreenMachine! for their contribution to this bot.
+To [Thukor](https://github.com/Thukor), and GreenMachine! for their contribution to this bot.
